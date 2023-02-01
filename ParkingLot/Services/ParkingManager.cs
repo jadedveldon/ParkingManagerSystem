@@ -4,12 +4,12 @@ using ParkingSystem.Models;
 namespace ParkingSystem.Services;
 public class ParkingManager
 {   //declaring variables which are to be used later 
-    public int availableTwoWheelerLots;
-    public int availableFourWheelerLots;
-    public int availableHeavyVehicleLots;
-    public List<ParkingLot> parkingSpaces = new List<ParkingLot>();
-    public Dictionary<string, Ticket> ticketDict = new Dictionary<string, Ticket>();
-    public List<Vehicle> vehicleList = new List<Vehicle>();
+    private int availableTwoWheelerLots;
+    private int availableFourWheelerLots;
+    private int availableHeavyVehicleLots;
+    private List<ParkingLot> parkingSpaces = new();
+    private Dictionary<string, Ticket> ticketDict = new();
+    private List<Vehicle> vehicleList = new();
     //initilizing parking lots and their number is given input by the user
     public ParkingManager(int TwoWheelerLots, int FourWheelerLots, int HeavyVehicleLots)
     {
@@ -18,58 +18,35 @@ public class ParkingManager
         availableHeavyVehicleLots = HeavyVehicleLots;
     }
     //lot availability is checked and ticket is generated
-    public string ParkVehicle(ParkingCategory VehicleCategory, string VehicleNumber)
+    public string? ParkVehicle(ParkingCategory VehicleCategory, string VehicleNumber)
     {   //vehicle enters the lot
-        vehicleList.Add(new Vehicle(VehicleCategory));
+        vehicleList.Add(new Vehicle(VehicleCategory, VehicleNumber));
         var vehicle = vehicleList.Last();
-        string vehicleId = vehicle.VehicleId;
-        vehicle.VehicleNumber = VehicleNumber;
-        string lotId;
-        string ticketId;
+        string? vehicleId = vehicle.VehicleId;
+        string? ticketId;
         //check for availability
         switch (VehicleCategory)
         {
             case (ParkingCategory.TwoWheeler):
                 {
-                    if (availableTwoWheelerLots > 0)
-                    {
-                        ticketId = ticketGenerator(ParkingCategory.TwoWheeler, vehicleId);
-                        availableTwoWheelerLots--;
-                        return ticketId;
-                    }
-                    else
-                    {
-                        return "No slots available, Vehicle can't be parked";
-                    }
+                    ticketId = TicketGenerator(ParkingCategory.TwoWheeler, vehicleId, VehicleNumber);
+                    availableTwoWheelerLots--;
+                    return ticketId;
                 }
             case (ParkingCategory.FourWheeler):
                 {
-                    if (availableFourWheelerLots > 0)
-                    {
-                        ticketId = ticketGenerator(ParkingCategory.FourWheeler, vehicleId);
-                        availableFourWheelerLots--;
-                        return ticketId;
-                    }
-                    else
-                    {
-                        return "No slots available, Vehicle can't be parked";
-                    }
+                    ticketId = TicketGenerator(ParkingCategory.FourWheeler, vehicleId, VehicleNumber);
+                    availableFourWheelerLots--;
+                    return ticketId;
                 }
             case (ParkingCategory.HeavyVehicle):
                 {
-                    if (availableHeavyVehicleLots > 0)
-                    {
-                        ticketId = ticketGenerator(ParkingCategory.HeavyVehicle, vehicleId);
-                        availableHeavyVehicleLots--;
-                        return ticketId;
-                    }
-                    else
-                    {
-                        return "No slots available, Vehicle can't be parked";
-                    }
+                    ticketId = TicketGenerator(ParkingCategory.HeavyVehicle, vehicleId, VehicleNumber);
+                    availableHeavyVehicleLots--;
+                    return ticketId;
                 }
         }
-        return "Error:Vehicle Park failed";
+        return null;
     }
 
 
@@ -80,59 +57,75 @@ public class ParkingManager
             var ticket = ticketDict[ticketId];
             ticket.UnParkTime = DateTime.Now;
             ticketDict[ticketId] = ticket;
-            string lotId = ticket.LotId;
-            foreach (var lot in parkingSpaces.ToList())
+            string? lotId = ticket.LotId;
+            var lot = (from l in parkingSpaces
+                       where l.LotId == lotId
+                       select l).Single();
+
+            switch (lot.LotCategory)
             {
-                if (lot.LotId == lotId)
-                {
-                    switch (lot.LotCategory)
+                case (ParkingCategory.TwoWheeler):
                     {
-                        case (ParkingCategory.TwoWheeler):
-                            {
-                                availableTwoWheelerLots++;
-                                break;
-                            }
-                        case (ParkingCategory.FourWheeler):
-                            {
-                                availableFourWheelerLots++;
-                                break;
-                            }
-                        case (ParkingCategory.HeavyVehicle):
-                            {
-                                availableHeavyVehicleLots++;
-                                break;
-                            }
+                        availableTwoWheelerLots++;
+                        break;
                     }
-                    parkingSpaces.Remove(lot);
-                }
+                case (ParkingCategory.FourWheeler):
+                    {
+                        availableFourWheelerLots++;
+                        break;
+                    }
+                case (ParkingCategory.HeavyVehicle):
+                    {
+                        availableHeavyVehicleLots++;
+                        break;
+                    }
             }
+            parkingSpaces.Remove(lot);
             return true;
         }
-        catch (Exception e)
+        catch (Exception)
         {
             return false;
         }
     }
 
 
-    public Dictionary<ParkingCategory, int> lotOccupancyStatus()
+    public Dictionary<ParkingCategory, int> LotOccupancyStatus()
     {
-        Dictionary<ParkingCategory, int> occupancyStatus = new Dictionary<ParkingCategory, int>();
+        Dictionary<ParkingCategory, int> occupancyStatus = new();
         occupancyStatus.Add(ParkingCategory.TwoWheeler, availableTwoWheelerLots);
         occupancyStatus.Add(ParkingCategory.FourWheeler, availableFourWheelerLots);
         occupancyStatus.Add(ParkingCategory.HeavyVehicle, availableHeavyVehicleLots);
         return occupancyStatus;
     }
 
-    public string ticketGenerator(ParkingCategory parkingCategory, string vehicleId)
+    private string TicketGenerator(ParkingCategory parkingCategory, string vehicleId, string vehicleNumber)
     {
-        ParkingLot parkingLot = new ParkingLot(parkingCategory);
-        string lotId = parkingLot.LotId;
+        ParkingLot parkingLot = new(parkingCategory);
+        string? lotId = parkingLot.LotId;
         parkingLot.LotOccupy();
         parkingSpaces.Add(parkingLot);
-        Ticket ticket = new Ticket(lotId, vehicleId);
-        string ticketId = ticket.TicketId;
+        Ticket ticket = new(lotId, vehicleId, vehicleNumber);
+        string? ticketId = ticket.TicketId;
         ticketDict.Add(ticketId, ticket);
         return ticketId;
+    }
+
+    public bool IsParkingLotAvailable(ParkingCategory parkingCategory)
+    {
+        if (parkingCategory == ParkingCategory.TwoWheeler && availableTwoWheelerLots > 0)
+        {
+            return true;
+        }
+        else if (parkingCategory == ParkingCategory.FourWheeler && availableFourWheelerLots > 0)
+        {
+            return true;
+        }
+        else if (parkingCategory == ParkingCategory.HeavyVehicle && availableHeavyVehicleLots > 0)
+        {
+            return true;
+        }
+
+        return false;
     }
 }

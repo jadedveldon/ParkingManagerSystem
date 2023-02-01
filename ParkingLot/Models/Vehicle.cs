@@ -8,10 +8,11 @@ public class Vehicle
     public ParkingCategory VehicleCategory;
     public string VehicleNumber;
 
-    public Vehicle(ParkingCategory vehicleCategory)
+    public Vehicle(ParkingCategory vehicleCategory, string vehicleNumber)
     {
         var guid = Guid.NewGuid().ToString();
         VehicleId = guid;
         VehicleCategory = vehicleCategory;
+        VehicleNumber = vehicleNumber;
     }
 }
