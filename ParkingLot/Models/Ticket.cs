@@ -1,14 +1,13 @@
-﻿using System;
-
-namespace ParkingSystem.Models;
+﻿namespace ParkingSystem.Models;
 
 public class Ticket
 {
     public string TicketId;
     public string LotId;
     public string VehicleId;
-    public DateTime ParkTime = new DateTime();
-    public DateTime UnParkTime = new DateTime();
+    public DateTime ParkTime;
+    public DateTime UnParkTime;
+    public string VehicleNumber;
 
     public void DisplayStatus()
     {
